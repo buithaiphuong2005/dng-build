@@ -10,7 +10,6 @@ jobs:
 
       - name: Force Unzip
         run: |
-          # Giải nén file zip của bạn
           7z x "dng-build.zip" -o"source" -y
 
       - name: Setup MSBuild
@@ -18,14 +17,13 @@ jobs:
 
       - name: Build dng_validate
         run: |
-          # Tìm file dng_validate.sln (đã thấy trong ảnh của bạn)
           $sln = (Get-ChildItem -Path "source" -Recurse -Filter "dng_validate.sln" | Select-Object -First 1).FullName
-          if (-not $sln) { throw "Van ko thay file dng_validate.sln trong Zip!" }
+          if (-not $sln) { throw "Van ko thay file sln!" }
           
           echo "Dang build file: $sln"
           
-          # Lệnh build chính xác cho file solution của bạn
-          msbuild "$sln" /p:Configuration=Release /p:Platform=x64
+          # Bo qua viec chi dinh Configuration/Platform de MSBuild tu lay mac dinh cua Adobe
+          msbuild "$sln" /t:dng_validate
 
       - name: Get Result
         if: always()
