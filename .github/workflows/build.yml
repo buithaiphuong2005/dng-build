@@ -1,4 +1,4 @@
-name: Build DNG Tool From Zip
+name: Build DNG Final Fix
 on: [push, workflow_dispatch]
 
 jobs:
@@ -8,30 +8,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Unzip Source
+      - name: Find and Unzip
         run: |
-          # Giải nén và ép ghi đè
-          Expand-Archive -Path dng-build.zip -DestinationPath . -Force
-          # Hiện danh sách file để tôi xem nếu vẫn lỗi
-          dir -Recurse
+          # Tìm file zip bất kỳ trong repo và giải nén
+          $zipFile = Get-ChildItem -Recurse -Filter "*.zip" | Select-Object -First 1
+          if (-not $zipFile) { throw "Khong tim thay file .zip nao trong Repository!" }
+          echo "Dang giai nen: $($zipFile.FullName)"
+          Expand-Archive -Path $zipFile.FullName -DestinationPath . -Force
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
       - name: Build dng_validate
         run: |
-          # Tìm file .sln ở bất cứ đâu và build nó
-          $slnPath = Get-ChildItem -Recurse -Filter "dng_sdk.sln" | Select-Object -First 1 -ExpandProperty FullName
-          if (-not $slnPath) { throw "Không tìm thấy file dng_sdk.sln trong file Zip của bạn!" }
+          # Tìm file .sln ở bất cứ ngõ ngách nào
+          $slnPath = Get-ChildItem -Recurse -Filter "dng_sdk.sln" | Select-Object -First 1 | ExpandProperty FullName
+          if (-not $slnPath) { 
+            dir -Recurse # Lenh nay de hien thi tat ca file neu van loi
+            throw "Van khong tim thay dng_sdk.sln! Hay kiem tra lai file Zip." 
+          }
           
-          echo "Đang build file: $slnPath"
-          
-          # Chạy lệnh build
+          echo "Da tim thay Solution tai: $slnPath"
           msbuild $slnPath /p:Configuration=Release /p:Platform=x64 /t:dng_validate
 
       - name: Get Result
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dng_validate_exe
-          # Tìm file .exe vừa tạo ra để upload lên cho bạn
           path: "**/dng_validate.exe"
