@@ -1,4 +1,4 @@
-name: Build DNG Final Fix
+name: Build DNG Final Final
 on: [push, workflow_dispatch]
 
 jobs:
@@ -8,25 +8,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Find and Unzip
+      - name: Force Unzip with 7-Zip
         run: |
-          # Tìm file zip và giải nén
-          $zipFile = Get-ChildItem -Recurse -Filter "*.zip" | Select-Object -First 1
-          if (-not $zipFile) { throw "Khong tim thay file .zip!" }
-          Expand-Archive -Path $zipFile.FullName -DestinationPath . -Force
+          # Dùng 7z để giải nén mọi file .zip tìm thấy vào thư mục hiện tại
+          7z x *.zip -o. -y
+          # Hiện danh sách file ngay lập tức để kiểm tra
+          dir -Recurse -Depth 3
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
       - name: Build dng_validate
         run: |
-          # Tìm đường dẫn file .sln chính xác
-          $slnPath = (Get-ChildItem -Recurse -Filter "dng_sdk.sln" | Select-Object -First 1).FullName
-          if (-not $slnPath) { throw "Van khong tim thay dng_sdk.sln!" }
+          # Tìm file .sln bằng lệnh dir đơn giản hơn
+          $sln = (dir -Recurse -Filter "dng_sdk.sln" | Select-Object -First 1).FullName
+          if (-not $sln) { throw "Khong tim thay file dng_sdk.sln trong Zip!" }
           
-          echo "Da tim thay Solution tai: $slnPath"
-          # Chạy build
-          msbuild $slnPath /p:Configuration=Release /p:Platform=x64 /t:dng_validate
+          echo "Build file: $sln"
+          msbuild $sln /p:Configuration=Release /p:Platform=x64 /t:dng_validate
 
       - name: Get Result
         if: always()
