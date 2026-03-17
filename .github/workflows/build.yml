@@ -10,7 +10,6 @@ jobs:
 
       - name: Force Unzip
         run: |
-          # Giải nén vào thư mục source
           7z x "dng-build.zip" -o"source" -y
 
       - name: Setup MSBuild
@@ -18,17 +17,18 @@ jobs:
 
       - name: Build dng_validate
         run: |
-          # Tìm file sln chính xác
+          # 1. Tìm file sln
           $sln = (Get-ChildItem -Path "source" -Recurse -Filter "dng_validate.sln" | Select-Object -First 1).FullName
           
-          # Tự động nạp mọi đường dẫn include để không lo lỗi thiếu file .h
+          # 2. Tự động tìm nạp mọi đường dẫn include để sửa lỗi thiếu file .h
           $inc = (Get-ChildItem -Path "source" -Recurse -Directory -Filter "include" | Select-Object -ExpandProperty FullName) -join ";"
           $pub = (Get-ChildItem -Path "source" -Recurse -Directory -Filter "public" | Select-Object -ExpandProperty FullName) -join ";"
           $env:INCLUDE += ";$inc;$pub"
           
           echo "Building: $sln"
-          # Build bản Release
-          msbuild "$sln" /p:Configuration=Release /t:dng_validate
+          
+          # 3. Ép build đúng cấu hình x64 cho Windows
+          msbuild "$sln" /p:Configuration=Release /p:Platform=x64 /t:dng_validate
 
       - name: Get Result
         if: always()
