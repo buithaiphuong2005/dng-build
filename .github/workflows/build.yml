@@ -10,6 +10,7 @@ jobs:
 
       - name: Force Unzip
         run: |
+          # Giải nén vào thư mục source
           7z x "dng-build.zip" -o"source" -y
 
       - name: Setup MSBuild
@@ -17,13 +18,17 @@ jobs:
 
       - name: Build dng_validate
         run: |
+          # Tìm file sln chính xác
           $sln = (Get-ChildItem -Path "source" -Recurse -Filter "dng_validate.sln" | Select-Object -First 1).FullName
-          if (-not $sln) { throw "Van ko thay file sln!" }
           
-          echo "Dang build file: $sln"
+          # Tự động nạp mọi đường dẫn include để không lo lỗi thiếu file .h
+          $inc = (Get-ChildItem -Path "source" -Recurse -Directory -Filter "include" | Select-Object -ExpandProperty FullName) -join ";"
+          $pub = (Get-ChildItem -Path "source" -Recurse -Directory -Filter "public" | Select-Object -ExpandProperty FullName) -join ";"
+          $env:INCLUDE += ";$inc;$pub"
           
-          # Bo qua viec chi dinh Configuration/Platform de MSBuild tu lay mac dinh cua Adobe
-          msbuild "$sln" /t:dng_validate
+          echo "Building: $sln"
+          # Build bản Release
+          msbuild "$sln" /p:Configuration=Release /t:dng_validate
 
       - name: Get Result
         if: always()
