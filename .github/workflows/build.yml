@@ -10,21 +10,28 @@ jobs:
 
       - name: Unzip Source
         run: |
-          # Giải nén file zip bạn đã upload
-          Expand-Archive -Path dng-build.zip -DestinationPath .
-          # Hiển thị danh sách file để kiểm tra
-          ls
+          # Giải nén và ép ghi đè
+          Expand-Archive -Path dng-build.zip -DestinationPath . -Force
+          # Hiện danh sách file để tôi xem nếu vẫn lỗi
+          dir -Recurse
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
       - name: Build dng_validate
         run: |
-          # Chạy lệnh build file dng_validate.exe
-          msbuild dng_sdk/Targets/Windows/dng_sdk.sln /p:Configuration=Release /p:Platform=x64 /t:dng_validate /p:IncludePath="${{ github.workspace }}/XMP-Toolkit-SDK/public/include"
+          # Tìm file .sln ở bất cứ đâu và build nó
+          $slnPath = Get-ChildItem -Recurse -Filter "dng_sdk.sln" | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $slnPath) { throw "Không tìm thấy file dng_sdk.sln trong file Zip của bạn!" }
+          
+          echo "Đang build file: $slnPath"
+          
+          # Chạy lệnh build
+          msbuild $slnPath /p:Configuration=Release /p:Platform=x64 /t:dng_validate
 
       - name: Get Result
         uses: actions/upload-artifact@v4
         with:
           name: dng_validate_exe
-          path: dng_sdk/Targets/Windows/x64/Release/dng_validate.exe
+          # Tìm file .exe vừa tạo ra để upload lên cho bạn
+          path: "**/dng_validate.exe"
