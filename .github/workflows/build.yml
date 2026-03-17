@@ -10,19 +10,19 @@ jobs:
 
       - name: Force Unzip with 7-Zip
         run: |
-          # Dùng 7z để giải nén mọi file .zip tìm thấy vào thư mục hiện tại
-          7z x *.zip -o. -y
-          # Hiện danh sách file ngay lập tức để kiểm tra
-          dir -Recurse -Depth 3
+          # Sửa lại dấu cách cho lệnh 7z và giải nén vào thư mục hiện tại
+          7z x dng-build.zip -o"." -y
+          # Kiểm tra xem đã có thư mục dng_sdk chưa
+          dir
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
       - name: Build dng_validate
         run: |
-          # Tìm file .sln bằng lệnh dir đơn giản hơn
+          # Tìm file .sln
           $sln = (dir -Recurse -Filter "dng_sdk.sln" | Select-Object -First 1).FullName
-          if (-not $sln) { throw "Khong tim thay file dng_sdk.sln trong Zip!" }
+          if (-not $sln) { throw "Khong tim thay file dng_sdk.sln sau khi giai nen!" }
           
           echo "Build file: $sln"
           msbuild $sln /p:Configuration=Release /p:Platform=x64 /t:dng_validate
