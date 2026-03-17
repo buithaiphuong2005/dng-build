@@ -10,10 +10,9 @@ jobs:
 
       - name: Find and Unzip
         run: |
-          # Tìm file zip bất kỳ trong repo và giải nén
+          # Tìm file zip và giải nén
           $zipFile = Get-ChildItem -Recurse -Filter "*.zip" | Select-Object -First 1
-          if (-not $zipFile) { throw "Khong tim thay file .zip nao trong Repository!" }
-          echo "Dang giai nen: $($zipFile.FullName)"
+          if (-not $zipFile) { throw "Khong tim thay file .zip!" }
           Expand-Archive -Path $zipFile.FullName -DestinationPath . -Force
 
       - name: Setup MSBuild
@@ -21,14 +20,12 @@ jobs:
 
       - name: Build dng_validate
         run: |
-          # Tìm file .sln ở bất cứ ngõ ngách nào
-          $slnPath = Get-ChildItem -Recurse -Filter "dng_sdk.sln" | Select-Object -First 1 | ExpandProperty FullName
-          if (-not $slnPath) { 
-            dir -Recurse # Lenh nay de hien thi tat ca file neu van loi
-            throw "Van khong tim thay dng_sdk.sln! Hay kiem tra lai file Zip." 
-          }
+          # Tìm đường dẫn file .sln chính xác
+          $slnPath = (Get-ChildItem -Recurse -Filter "dng_sdk.sln" | Select-Object -First 1).FullName
+          if (-not $slnPath) { throw "Van khong tim thay dng_sdk.sln!" }
           
           echo "Da tim thay Solution tai: $slnPath"
+          # Chạy build
           msbuild $slnPath /p:Configuration=Release /p:Platform=x64 /t:dng_validate
 
       - name: Get Result
